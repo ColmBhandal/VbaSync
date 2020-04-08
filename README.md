@@ -1,6 +1,12 @@
+## Recommendation
+
+Before starting this, it is recommended that you use code external to your workbook to manage VBA code for that workbook. This solution nests the sync module in the workbook itself, which is somewhat messy. The following library supports writing your own sync code in C#: https://gitlab.com/hectorjsmith/csharp-excel-vba-sync.
+
+## Main
+
 The purpose of this VBA code is to allow you to set up a VBA coding project and put it under version control e.g. Git. The primary use case is for you to use this code as it is, without modifying it, as a tool for importing/exporting your own code. You can of course also contribute to this codebase- but beware: if you are editing the sync module itself, you will not be able to use it to do sync- it can't import/export itself! More on that below. The below instructions are for you as a user of this codebase, for importing/exporting your own code- not as a developer/contributor to this codebase!
 
-******* ENVIRONMENT SETUP INSTRUCTIONS *******
+## ENVIRONMENT SETUP INSTRUCTIONS
 
 -Create your own repo and add all the files from this repo into it. You can do this e.g. by cloning this repo, deleting the remote, and then setting your own remote.
 
