@@ -148,7 +148,6 @@ Private Sub ImportModules()
     'The below call must be asynchronous, so that this module can die
     'along with all those modules feeding it, and their new versions can be renamed.Dim procCallWithParams As String
     Dim procCallWithParams As String
-    Application.OnTime Now + TimeSerial(0, 0, 1), "renameNumberSuffixedComponents"
     Debug.Print "----- All Imports complete"
 End Sub
 
