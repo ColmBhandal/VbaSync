@@ -1,6 +1,6 @@
 ## Recommendation
 
-Before starting this, it is recommended that you use code external to your workbook to manage VBA code for that workbook. This solution nests the sync module in the workbook itself, which is somewhat messy. The following library supports writing your own sync code in C#: https://gitlab.com/hectorjsmith/csharp-excel-vba-sync.
+Before starting this, it is recommended that you consider an alternative solution which uses code external to your workbook to manage VBA code for that workbook. This solution nests the sync module in the workbook itself, which is somewhat messy. The following library supports writing your own sync code in C#: https://gitlab.com/hectorjsmith/csharp-excel-vba-sync.
 
 ## Main
 
