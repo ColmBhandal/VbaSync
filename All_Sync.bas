@@ -84,7 +84,7 @@ Attribute ExportModulesTargeted.VB_ProcData.VB_Invoke_Func = "p\n14"
     Set wkbSource = ThisDoc
     
     If wkbSource.VBProject.Protection = 1 Then
-    MsgBox "The VBA in this workbook is protected," & _
+    MsgBox "The VBA in this document is protected," & _
         " not possible to export the code"
     Exit Sub
     End If
@@ -241,7 +241,7 @@ Private Sub ImportModulesTargeted(importFolder As String, whiteList() As String)
     End If
 
     If wkbTarget.VBProject.Protection = 1 Then
-    MsgBox "The VBA in this workbook is protected," & _
+    MsgBox "The VBA in this document is protected," & _
         "not possible to Import the code"
     Exit Sub
     End If
@@ -273,7 +273,7 @@ Private Sub ImportModulesTargeted(importFolder As String, whiteList() As String)
                     On Error GoTo Problem_Importing
                     cmpComponents.Import objFile.Path
                     On Error GoTo 0
-                    Debug.Print "Imported " & objFileName & " to Workbook"
+                    Debug.Print "Imported " & objFileName & " to document"
                 Else
                     Debug.Print moduleName & " not on white list. Skipped import"
                 End If
