@@ -1,8 +1,6 @@
 Attribute VB_Name = "All_Sync"
 Option Explicit
 
-Const EH_PREFIX = "EH_"
-Private Const WB_PREFIX = "Workbook_"
 Private Const CONFIG_FILE_NAME = "VbaSync.config"
 Private Const SPECIFIC_SYNCLIST_FILE_NAME = "specificSyncList.config"
 Private Const MISC_SYNCLIST_FILE_NAME = "genSyncList.config"
@@ -15,9 +13,12 @@ Private Const MISC_SYNCLIST_ABS_KEY = "miscListAbs: "
 'Forms can be annoying- coming up as diffs all the time, so you can use this to turn export off for them
 Private Const EXPORT_FORMS = True
 
+Private ThisDoc As Object
+
 
 Public Sub ImportModulesWarn()
     Dim answer As Integer
+    Call PrepareEnviroment
     answer = MsgBox("Are you sure you want to proceed?" & vbCrLf & _
     "Import will overwrite the following modules with data from disk: " & _
     vbCrLf & Join(specificWhiteList(), ",") & vbCrLf & Join(miscWhiteList(), ",") & vbCrLf, _
@@ -31,6 +32,7 @@ End Sub
 
 Public Sub ExportModules()
     Dim lOrphans As String
+    Call PrepareEnviroment
     lOrphans = mGetOrphanedModulesAsString()
     If lOrphans <> "" Then
         Call MsgBox("Warning! Orphaned modules listed below won't be exported." _
@@ -40,6 +42,20 @@ Public Sub ExportModules()
     ExportMiscModules
     ExportProjectSpecificModules
     Debug.Print "***** All exports complete"
+End Sub
+
+Public Sub PrepareEnviroment()
+    Dim App As Object
+    
+    Select Case Application.Name
+        Case "Microsoft Word"
+            Set App = GetObject(, "Word.Application")
+            Set ThisDoc = App.ActiveDocument
+
+        Case "Microsoft Excel"
+            Set App = GetObject(, "Excel.Application")
+            Set ThisDoc = App.ActiveWorkbook
+    End Select
 End Sub
 
 Private Sub ExportProjectSpecificModules()
@@ -57,7 +73,7 @@ End Sub
 Private Sub ExportModulesTargeted(exportFolder As String, whiteList() As String)
 Attribute ExportModulesTargeted.VB_ProcData.VB_Invoke_Func = "p\n14"
     Dim bExport As Boolean
-    Dim wkbSource As Excel.Workbook
+    Dim wkbSource As Object
     Dim szSourceWorkbook As String
     Dim szExportPath As String
     Dim szFileName As String
@@ -65,10 +81,10 @@ Attribute ExportModulesTargeted.VB_ProcData.VB_Invoke_Func = "p\n14"
 
     Debug.Print "***** Ready for export to: " & exportFolder
 
-    Set wkbSource = ThisWorkbook
+    Set wkbSource = ThisDoc
     
     If wkbSource.VBProject.Protection = 1 Then
-    MsgBox "The VBA in this workbook is protected," & _
+    MsgBox "The VBA in this document is protected," & _
         " not possible to export the code"
     Exit Sub
     End If
@@ -139,6 +155,7 @@ Function importImpossible(cmpComponent As VBIDE.VBComponent) As Boolean
 End Function
 
 Private Sub ImportModules()
+    Call PrepareEnviroment
     Call mWarnForOrphans
     Debug.Print "----- Imports starting"
     'Need to do specific first or import fails
@@ -173,7 +190,7 @@ End Function
 
 Private Function mGetOrphanedModuleNames() As Collection
     Dim resultComponents As New Collection
-    Dim wkbTarget As Excel.Workbook: Set wkbTarget = ThisWorkbook
+    Dim wkbTarget As Object: Set wkbTarget = ThisDoc
     Dim vbProj As VBIDE.VBProject
     Set vbProj = wkbTarget.VBProject
     Dim cmpComponents As VBIDE.VBComponents
@@ -210,7 +227,7 @@ Private Sub ImportMiscModules()
 End Sub
 
 Private Sub ImportModulesTargeted(importFolder As String, whiteList() As String)
-    Dim wkbTarget As Excel.Workbook: Set wkbTarget = ThisWorkbook
+    Dim wkbTarget As Object: Set wkbTarget = ThisDoc
     Dim objFSO As Scripting.FileSystemObject
     Dim objFile As Scripting.file
     Dim szImportPath As String
@@ -224,7 +241,7 @@ Private Sub ImportModulesTargeted(importFolder As String, whiteList() As String)
     End If
 
     If wkbTarget.VBProject.Protection = 1 Then
-    MsgBox "The VBA in this workbook is protected," & _
+    MsgBox "The VBA in this document is protected," & _
         "not possible to Import the code"
     Exit Sub
     End If
@@ -256,7 +273,7 @@ Private Sub ImportModulesTargeted(importFolder As String, whiteList() As String)
                     On Error GoTo Problem_Importing
                     cmpComponents.Import objFile.Path
                     On Error GoTo 0
-                    Debug.Print "Imported " & objFileName & " to Workbook"
+                    Debug.Print "Imported " & objFileName & " to document"
                 Else
                     Debug.Print moduleName & " not on white list. Skipped import"
                 End If
@@ -272,12 +289,12 @@ End Sub
 
 Private Sub tryRemoveModuleByName(moduleName As String)
     Dim vbProj As VBIDE.VBProject
-    Set vbProj = ThisWorkbook.VBProject
+    Set vbProj = ThisDoc.VBProject
     With vbProj.VBComponents
         On Error GoTo Did_Not_Remove
         .Remove .Item(moduleName)
         On Error GoTo 0
-        Debug.Print Now & " Removed module " & moduleName & " from " & ThisWorkbook.Name
+        Debug.Print Now & " Removed module " & moduleName & " from " & ThisDoc.Name
     End With
     Exit Sub
 Did_Not_Remove:
@@ -292,14 +309,14 @@ End Sub
 Private Function createFolderWithProjectSpecificVBAFiles() As String
     Dim FSO As New FileSystemObject
     Dim totalPath As String: totalPath = getFolderWithProjectSpecificVbaFiles(FSO)
-    If totalPath = "" Then totalPath = getWorkingDirPath(ThisWorkbook) & "ProjectSpecific"
+    If totalPath = "" Then totalPath = getWorkingDirPath(ThisDoc) & "ProjectSpecific"
     createFolderWithProjectSpecificVBAFiles = createFolderWithVBAFiles(FSO, totalPath)
 End Function
 
 Private Function createFolderWithVBAMiscFiles() As String
     Dim FSO As New FileSystemObject
     Dim totalPath As String: totalPath = getFolderWithVbaMiscFiles(FSO)
-    If totalPath = "" Then totalPath = getWorkingDirPath(ThisWorkbook) & "GeneralPurpose"
+    If totalPath = "" Then totalPath = getWorkingDirPath(ThisDoc) & "GeneralPurpose"
     createFolderWithVBAMiscFiles = createFolderWithVBAFiles(FSO, totalPath)
 End Function
 
@@ -320,7 +337,7 @@ Private Function createFolderWithVBAFiles(FSO As FileSystemObject, totalPath As 
     
 End Function
 
-Public Function getWorkingDirPath(wb As Workbook)
+Public Function getWorkingDirPath(wb As Object)
     Dim prefixPath As String
     prefixPath = wb.Path
     If right(prefixPath, 1) <> "\" Then
@@ -351,7 +368,7 @@ Private Function getSyncPropertyValue(FSO As FileSystemObject, relKey As String,
             Dim val As String
             If InStr(currLine, relKey) = 1 Then
                 val = Replace(currLine, relKey, "", 1, 1)
-                getSyncPropertyValue = getWorkingDirPath(ThisWorkbook) & val
+                getSyncPropertyValue = getWorkingDirPath(ThisDoc) & val
                 Exit Function
             ElseIf InStr(currLine, absKey) = 1 Then
                 val = Replace(currLine, absKey, "", 1, 1)
@@ -371,7 +388,7 @@ End Sub
 Private Function getGenSyncListFullName(FSO As FileSystemObject) As String
     Dim propertyName As String
     propertyName = getSyncPropertyValue(FSO, MISC_SYNCLIST_REL_KEY, MISC_SYNCLIST_ABS_KEY)
-    If propertyName = "" Then propertyName = getWorkingDirPath(ThisWorkbook) & MISC_SYNCLIST_FILE_NAME
+    If propertyName = "" Then propertyName = getWorkingDirPath(ThisDoc) & MISC_SYNCLIST_FILE_NAME
     getGenSyncListFullName = propertyName
 End Function
 
@@ -386,7 +403,7 @@ Private Function getConfigInputStream(FSO As FileSystemObject) As textStream
 End Function
 
 Private Function getConfigFileFullPath() As String
-    getConfigFileFullPath = getWorkingDirPath(ThisWorkbook) & CONFIG_FILE_NAME
+    getConfigFileFullPath = getWorkingDirPath(ThisDoc) & CONFIG_FILE_NAME
 End Function
 
 Private Sub testIsWhiteListed()
@@ -467,7 +484,7 @@ Function getSpecificWhitelistInputStream(FSO As FileSystemObject) As textStream
 End Function
 
 Private Function getSpecificWhitelistFileFullPath() As String
-    getSpecificWhitelistFileFullPath = getWorkingDirPath(ThisWorkbook) & SPECIFIC_SYNCLIST_FILE_NAME
+    getSpecificWhitelistFileFullPath = getWorkingDirPath(ThisDoc) & SPECIFIC_SYNCLIST_FILE_NAME
 End Function
 
 Function getInputStream(FSO As FileSystemObject, fullPath As String) As textStream
@@ -480,7 +497,7 @@ config_textStream_Error:
 End Function
 
 Sub testgetWorkingDirPath()
-    MsgBox (getWorkingDirPath(ThisWorkbook))
+    MsgBox (getWorkingDirPath(ThisDoc))
 End Sub
 
 Private Sub raiseErrorSync(msg As String)
