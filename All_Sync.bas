@@ -503,5 +503,3 @@ End Sub
 Private Sub raiseErrorSync(msg As String)
     Err.Raise Number:=513, Description:=msg
 End Sub
-
-''DON'T ADD ANY TESTS TO SYNC - YOU'LL BREAK THE IMPORT
